@@ -50,28 +50,12 @@ public class MRUCampaignManager {
 		//don't add the autosave recovery file until it is resaved
 		if (newCampaign == AutoSaveManager.AUTOSAVE_FILE)
 			return;
-
-		if (mruCampaigns.isEmpty()) {
-			mruCampaigns.add(newCampaign);
-		} else {
-			// This code would be much simpler, but too late in the 1.3 cycle for this change.
-			//			LinkedList<File> newMruList = new LinkedList<File>(mruCampaigns);
-			//			newMruList.removeFirstOccurrence(newCampaign);
-			//			newMruList.addFirst(newCampaign);
-			//			while (newMruList.size() > DEFAULT_MAX_MRU)
-			//				newMruList.removeLast();
-			ArrayList<File> newMruList = new ArrayList<File>(DEFAULT_MAX_MRU + 1);
-			newMruList.add(newCampaign);
-			for (ListIterator<File> iter = mruCampaigns.listIterator(); iter.hasNext();) {
-				File next = iter.next();
-				if (newMruList.size() == DEFAULT_MAX_MRU)
-					break;
-				else if (next.equals(newCampaign))
-					continue;
-				else
-					newMruList.add(next);
-			}
-			mruCampaigns = newMruList;
+		// remove and reinsert the campaign so it is at the front of the list
+		mruCampaigns.remove(newCampaign);
+		mruCampaigns.add(0, newCampaign);
+		// remove excess element - we added at most 1 so size is at most DEFAULT_MAX_MRU + 1
+		if (mruCampaigns.size() > DEFAULT_MAX_MRU) {
+		  mruCampaigns.remove(DEFAULT_MAX_MRU);
 		}
 		resetMruMenu();
 	}
@@ -88,16 +72,11 @@ public class MRUCampaignManager {
 		} else {
 			int i = 1;
 			for (ListIterator<File> iter = mruCampaigns.listIterator(); iter.hasNext();) {
-				if (i > DEFAULT_MAX_MRU) {
-					break;
-				}
 				File nextFile = iter.next();
-				// Check to see if the file has been deleted
+				// Only add existing files.
 				if (nextFile.exists()) {
 					Action action = new AppActions.OpenMRUCampaign(nextFile, i++);
 					mruMenu.add(action);
-				} else {
-					iter.remove();
 				}
 			}
 		}
